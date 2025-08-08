@@ -3,8 +3,11 @@ package main
 import (
 	"bufio"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -134,11 +137,75 @@ func (t *ioConn) SessionID() string {
 	return "kubernetes-1"
 }
 
+// generateUID creates a random hex string for UIDs
+func generateUID() string {
+	b := make([]byte, 4) // 8 character hex string
+	rand.Read(b)
+	return hex.EncodeToString(b)
+}
+
 func main() {
 	server := mcp.NewServer(&mcp.Implementation{Name: "kubernetes-uuid"}, nil)
 
-	// add tools for k8s here
-	
+	// kubernetes API tools
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "create_pod",
+		Description: "Create a new pod in the Kubernetes cluster with auto-generated UID",
+	}, CreatePod)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_pod",
+		Description: "Get details of a specific pod by UID",
+	}, GetPod)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_pods",
+		Description: "List all pods managed by the API",
+	}, ListPods)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_pod",
+		Description: "Delete a pod by UID",
+	}, DeletePod)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_pod_logs",
+		Description: "Get logs from a specific pod",
+	}, GetPodLogs)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "create_service",
+		Description: "Create a service linked to a pod",
+	}, CreateService)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_services",
+		Description: "List all services managed by the API",
+	}, ListServices)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_cluster_info",
+		Description: "Get cluster status and node information",
+	}, GetClusterInfo)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "health_check",
+		Description: "Check the health status of the Kubernetes API",
+	}, HealthCheck)
+
+	// uuid generation tool
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "generate_uuid",
+		Description: "Generate a random UUID for use with pods and services",
+	}, func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[struct{}]) (*mcp.CallToolResultFor[interface{}], error) {
+		uid := generateUID()
+		return &mcp.CallToolResultFor[interface{}]{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: fmt.Sprintf("Generated UUID: %s", uid)},
+			},
+		}, nil
+	})
+
 	// sequential thinking
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "start_thinking",
@@ -167,7 +234,7 @@ func main() {
 		return ThinkingHistory(ctx, ss, params)
 	})
 
-	// Memory Store 
+	// Memory Store
 	kb := knowledgeBase{s: &memoryStore{}}
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "create_entities",
