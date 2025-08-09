@@ -35,4 +35,4 @@ To Quickly Test it -
 
 ---
 
-`Note` - The MCP server is written by (Vaidik)[https://github.com/vaidikcode] and the kuberenetes api to interact with cluster using uuid is written by Naman
+`Note` - The MCP server is written by [Vaidik](https://github.com/vaidikcode) and the kuberenetes api to interact with cluster using uuid is written by Naman
